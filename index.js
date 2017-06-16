@@ -10,6 +10,8 @@ const options = {
 	host: 'realtime.portauthority.org',
     path: '/bustime/api/v3/getpredictions?key=ZvG9KVepvvzYaDkbAUuP3vyjF&stpid=8199&rtpidatafeed=Port%20Authority%20Bus&format=json'
 }
+const App = require('actions-on-google').ApiAiApp;
+process.env.DEBUG = 'actions-on-google:*';
 
 var speechText = "Hello, Google";
 var data = {
@@ -82,6 +84,36 @@ function updateData(request, response) {
 
 
 exports.getBusInfo = function getBusInfo (request, response){
-	updateData(request, response);		    
+	updateData(request, response);	
+	const app = new App({ request, response });
+
+ // //    //console.log('Request headers: ' + JSON.stringify(request.headers));
+ // //    //if (request.body != null) console.log('Request body: ' + JSON.stringify(request.body));
+		  
+
+
+
+  
+
+	function getPermission(app) {
+	  	const permission = app.SupportedPermissions.DEVICE_PRECISE_LOCATION;
+  		app.askForPermission('To find the nearest bus stop around you', permission);
+	}  
+
+	function getLocation(app) {
+		if (app.isPermissionGranted()) {
+		    let deviceCoordinates = app.getDeviceLocation().coordinates;
+		    return deviceCoordinates;
+		}
+	}
+
+
+	// let actionMap = new Map();
+
+ //    actionMap.set('get.permission', getPermission);
+ //    actionMap.set('get.location', getLocation);
+    
+
+	// app.handleRequest(actionMap);	    
 };
 
