@@ -16,51 +16,46 @@ const App = require('actions-on-google').ApiAiApp;
 
 
 var speechText = "Hello, Google";
-
   
 
-  
-
-	
 
 exports.getBusInfo = (request, response) => {
 	const app = new App({request, response });
-	// console.log('Request headers: ' + JSON.stringify(request.headers));
-	// console.log('Request body: ' + JSON.stringify(request.body));
-	function getPermission(app) {
-		let namePermission = app.SupportedPermissions.NAME;
-		let preciseLocationPermission = app.SupportedPermissions.DEVICE_PRECISE_LOCATION
-  		app.askForPermissions('To address you by name and know your location',[namePermission, preciseLocationPermission]);
-	}	
-	function getLocation(app) {
-		getPermission(app);
-		if (app.isPermissionGranted()) {
-		    let deviceCoordinates = app.getDeviceLocation().coordinates;
-		    return deviceCoordinates;
+
+	function getMyPlace(app) {
+		app.askForPermission('To find your location', app.SupportedPermissions.DEVICE_PRECISE_LOCATION);
+		if(app.isPermissionGranted()) {
+			let deviceCoordinates = app.getDeviceLocation().coordinates;
+			app.tell(deviceCoordinates);
 		}
 		else {
-			return "unknownLocation";
+			app.tell("how are you");
 		}
 	}
+	//Todo: debug why isPermissionGranted is false after asking for permission. 
+	function getPermission(app) {
+		app.askForPermission('To find the nearby bus stop around you', app.SupportedPermissions.DEVICE_PRECISE_LOCATION);
+		app.tell(app.isPermissionGranted().toString());
+	}
 
-
-
-	function updateData(app) {
+	function updateDataOutbound(app) {
 		var request = require('request');
-		request('https://three-doors-123.appspot.com/', function (error, res, body) {
-	  		console.log('body:', body); // Print the HTML for the Google homepage.
-	  		var data = {
-				speech: body
-			};
+		request('https://three-doors-123.appspot.com/outbound', function (error, res, body) {
 	  		app.ask(app.buildRichResponse().addSimpleResponse(body));
 		});
 	}
 
-
+	function updateDataInbound(app) {
+		var request = require('request');
+		request('https://three-doors-123.appspot.com/inbound', function (error, res, body) {
+	  		app.ask(app.buildRichResponse().addSimpleResponse(body));
+		});
+	}
 	const actionMap = new Map();
     actionMap.set('get.permission', getPermission);
-    actionMap.set('get.location', getLocation);
-    actionMap.set('update.data', updateData);
+    actionMap.set('get.my.place', getMyPlace);
+    actionMap.set('update.data.outbound', updateDataOutbound);
+    actionMap.set('update.data.inbound', updateDataInbound);
 	app.handleRequest(actionMap);	    
 };
 
