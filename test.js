@@ -1,4 +1,9 @@
-var request = require('request');
-request('https://three-doors-123.appspot.com/', function (error, response, body) {
-		console.log('body:', body); // Print the HTML for the Google homepage.
-});
+Q = require("q");
+Q.fcall(a = 1)
+.then(a = a + 1)
+.then(a = a + 2)
+.then(console.log(a))
+.catch(function (error) {
+    // Handle any error from all above steps 
+})
+.done();

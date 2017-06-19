@@ -13,7 +13,7 @@ var options = {
 };
 
 const App = require('actions-on-google').ApiAiApp;
-
+const 	Q = require("q");
 
 var speechText = "Hello, Google";
   
@@ -24,18 +24,26 @@ exports.getBusInfo = (request, response) => {
 
 	function getMyPlace(app) {
 		app.askForPermission('To find your location', app.SupportedPermissions.DEVICE_PRECISE_LOCATION);
+		console.log(app.isPermissionGranted());
 		if(app.isPermissionGranted()) {
 			let deviceCoordinates = app.getDeviceLocation().coordinates;
-			app.tell(deviceCoordinates);
+			app.ask(app.buildRichResponse().addSimpleResponse(deviceCoordinates));
 		}
 		else {
-			app.tell("how are you");
+			app.ask(app.buildRichResponse().addSimpleResponse("how are you"));
 		}
 	}
-	//Todo: debug why isPermissionGranted is false after asking for permission. 
+	//Todo: find out why answer "YES" to permission does not go back after asking for permission. 
 	function getPermission(app) {
-		app.askForPermission('To find the nearby bus stop around you', app.SupportedPermissions.DEVICE_PRECISE_LOCATION);
-		app.tell(app.isPermissionGranted().toString());
+
+		Q.fcall(app.askForPermission('To find the nearby bus stop around you', app.SupportedPermissions.DEVICE_PRECISE_LOCATION))
+		.then(app.buildRichResponse().addSimpleResponse("got your permission!"))
+		.then(console.log(app.isPermissionGranted().toString()))
+		.catch(function (error) {
+		    // Handle any error from all above steps 
+		})
+		.done();
+		
 	}
 
 	function updateDataOutbound(app) {
@@ -51,11 +59,15 @@ exports.getBusInfo = (request, response) => {
 	  		app.ask(app.buildRichResponse().addSimpleResponse(body));
 		});
 	}
+	function printLoc(app) {
+		app.tell(app.getDeviceLocation().coordinates.toString());
+	}
 	const actionMap = new Map();
     actionMap.set('get.permission', getPermission);
     actionMap.set('get.my.place', getMyPlace);
     actionMap.set('update.data.outbound', updateDataOutbound);
     actionMap.set('update.data.inbound', updateDataInbound);
+    actionMap.set('test', printLoc);
 	app.handleRequest(actionMap);	    
 };
 
