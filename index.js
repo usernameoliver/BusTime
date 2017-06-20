@@ -23,26 +23,20 @@ exports.getBusInfo = (request, response) => {
 	const app = new App({request, response });
 
 	function getMyPlace(app) {
-		app.askForPermission('To find your location', app.SupportedPermissions.DEVICE_PRECISE_LOCATION);
-		console.log(app.isPermissionGranted());
 		if(app.isPermissionGranted()) {
 			let deviceCoordinates = app.getDeviceLocation().coordinates;
-			app.ask(app.buildRichResponse().addSimpleResponse(deviceCoordinates));
+			console.log('User device location:', JSON.stringify(deviceCoordinates));
 		}
 		else {
-			app.ask(app.buildRichResponse().addSimpleResponse("how are you"));
+			app.ask(app.buildRichResponse().addSimpleResponse("you did not allow me to get your name"));
 		}
 	}
-	//Todo: find out why answer "YES" to permission does not go back after asking for permission. 
+	//Todo: find out how to reply "YES" to permission request
 	function getPermission(app) {
-
-		Q.fcall(app.askForPermission('To find the nearby bus stop around you', app.SupportedPermissions.DEVICE_PRECISE_LOCATION))
-		.then(app.buildRichResponse().addSimpleResponse("got your permission!"))
-		.then(console.log(app.isPermissionGranted().toString()))
-		.catch(function (error) {
-		    // Handle any error from all above steps 
-		})
-		.done();
+		let permission = app.SupportedPermissions.DEVICE_PRECISE_LOCATION;
+		app.data.permission = permission;
+		app.askForPermission('To find the bus stop nearby', permission);
+		console.log(app.isPermissionGranted());
 		
 	}
 
@@ -60,7 +54,8 @@ exports.getBusInfo = (request, response) => {
 		});
 	}
 	function printLoc(app) {
-		app.tell(app.getDeviceLocation().coordinates.toString());
+		if (app.isPermissionGranted())	app.tell(app.getDeviceLocation().coordinates.toString());
+		else app.tell("permission not granted");
 	}
 	const actionMap = new Map();
     actionMap.set('get.permission', getPermission);
