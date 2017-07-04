@@ -25,10 +25,11 @@ exports.getBusInfo = (request, response) => {
 	function getMyPlace(app) {
 		if(app.isPermissionGranted()) {
 			let deviceCoordinates = app.getDeviceLocation().coordinates;
+			app.tell("got it");
 			console.log('User device location:', JSON.stringify(deviceCoordinates));
 		}
 		else {
-			app.ask(app.buildRichResponse().addSimpleResponse("you did not allow me to get your name"));
+			app.ask(app.buildRichResponse().addSimpleResponse("you did not allow me to get your place"));
 		}
 	}
 	//Todo: find out how to reply "YES" to permission request
