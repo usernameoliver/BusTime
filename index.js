@@ -16,7 +16,8 @@ const App = require('actions-on-google').ApiAiApp;
 const 	Q = require("q");
 
 var speechText = "Hello, Google";
-  
+var myLatitude = 0;
+var myLongtitude = 0;
 
 
 exports.getBusInfo = (request, response) => {
@@ -30,10 +31,14 @@ exports.getBusInfo = (request, response) => {
 			console.log('User device location:');
 			console.log(deviceCoordinates.latitude);
 			console.log(deviceCoordinates.longitude);
-			app.tell("got it");
+			myLatitude = deviceCoordinates.latitude;
+			myLongtitude = deviceCoordinates.longitude;
+			app.ask(app.buildRichResponse().addSimpleResponse("What is your destination?"));
+			return deviceCoordinates;
 		}
 		else {
 			app.ask(app.buildRichResponse().addSimpleResponse("you did not allow me to get your place"));
+			return null;
 		}
 	}
 	//Todo: find out how to reply "YES" to permission request
@@ -62,11 +67,55 @@ exports.getBusInfo = (request, response) => {
 		if (app.isPermissionGranted())	app.tell(app.getDeviceLocation().coordinates.toString());
 		else app.tell("permission not granted");
 	}
+	function feedbackBus(app) {
+		var request = require('request');
+		var baseUrl = 'https://maps.googleapis.com/maps/api/directions/json?';
+		var originUrl = 'origin=' + myLatitude + ',' + myLongtitude;
+		var destination = app.getRawInput();
+		console.log(destination);
+		var destinationUrl = '&destination=' + destination;
+		var transitModeUrl = '&mode=transit';
+		var APIKeyUrl = '&key=AIzaSyA3mlW7CQCY3d2u_MZBsQfAlt6h-0ryjVI';
+		var httpUrl = baseUrl + originUrl + destinationUrl + transitModeUrl + APIKeyUrl;
+		request(httpUrl, function (error, res, body) {
+			var obj = JSON.parse(body);
+			var busName = obj.routes[0].legs[0].steps[1].transit_details.line.short_name;
+			var departureTime = obj.routes[0].legs[0].steps[1].transit_details.departure_time.text;
+			var stopName = obj.routes[0].legs[0].steps[1].transit_details.departure_stop.name;
+			var currentTime = getDateTime();
+			var predictedTime = departureTime.substring(0, departureTime.length - 2);
+			var currentHour = currentTime.split(":")[0];
+			var currentMinute = currentTime.split(":")[1];
+			var predictedHour = predictedTime.split(":")[0];
+			var predictedMinute = predictedTime.split(":")[1];
+
+			var timeDifference = (predictedMinute - 0) - (currentMinute - 0);
+			if (timeDifference < 0) {
+				timeDifference = (timeDifference - 0) + 60;
+			}
+	  		
+	  		var sentence = 'The bus ' + busName + " to " + destination + " will arrive at " + stopName + " in " + timeDifference + " minutes";
+	  		console.log(sentence);
+	  		app.tell(sentence);
+		});
+	}
+
+	function getDateTime() {
+
+		var date = new Date();
+		var hour = date.getHours();
+		hour = (hour < 10 ? "0" : "") + hour;
+		var min  = date.getMinutes();
+		min = (min < 10 ? "0" : "") + min;
+		return hour + ":" + min;
+
+	}
 	const actionMap = new Map();
     actionMap.set('get.permission', getPermission);
     actionMap.set('get.my.place', getMyPlace);
     actionMap.set('update.data.outbound', updateDataOutbound);
     actionMap.set('update.data.inbound', updateDataInbound);
+    actionMap.set('bus.feedback', feedbackBus);
     actionMap.set('test', printLoc);
 	app.handleRequest(actionMap);	    
 };
