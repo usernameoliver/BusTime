@@ -25,8 +25,12 @@ exports.getBusInfo = (request, response) => {
 	function getMyPlace(app) {
 		if(app.isPermissionGranted()) {
 			let deviceCoordinates = app.getDeviceLocation().coordinates;
+			const deviceLatitude = deviceCoordinates.latitude;
+        	const deviceLongitude = deviceCoordinates.longitude;
+			console.log('User device location:');
+			console.log(deviceCoordinates.latitude);
+			console.log(deviceCoordinates.longitude);
 			app.tell("got it");
-			console.log('User device location:', JSON.stringify(deviceCoordinates));
 		}
 		else {
 			app.ask(app.buildRichResponse().addSimpleResponse("you did not allow me to get your place"));
